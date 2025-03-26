@@ -1,0 +1,9 @@
+apiVersion: ai.github.com/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/name: ai-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: job-sample
+spec:
+  # TODO(user): Add fields here
