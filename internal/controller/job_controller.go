@@ -18,14 +18,14 @@ package controller
 
 import (
 	"context"
+	"slices"
+	"time"
+
 	aiv1 "github.com/re-cinq/ai-operator/api/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"slices"
-	"time"
 )
 
 const (
@@ -73,7 +73,7 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	// Check if the AI Job is marked for deletion
-	if !aiJob.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !aiJob.DeletionTimestamp.IsZero() {
 		if err := r.delete(ctx, aiJob); err != nil {
 			logger.Error(err, "failed to delete resources")
 			return ctrl.Result{RequeueAfter: time.Second * 15}, err
@@ -108,40 +108,15 @@ func (r *JobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *JobReconciler) needsUpdate(aiJob aiv1.Job, existingJob *batchv1.Job) bool {
-	// Check if the image has changed
-	if len(existingJob.Spec.Template.Spec.Containers) > 0 {
-		if existingJob.Spec.Template.Spec.Containers[0].Image != aiJob.Spec.Image {
-			return true
-		}
-
-		// Check if the command has changed
-		if !slices.Equal(existingJob.Spec.Template.Spec.Containers[0].Command, aiJob.Spec.Command) {
-			return true
-		}
-	}
-
-	// Check if volumes have changed
-	for _, volume := range existingJob.Spec.Template.Spec.Volumes {
-		if volume.Name == jobDefaultVolumeName {
-			if volume.PersistentVolumeClaim.ClaimName != aiJob.Name {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 func (r *JobReconciler) setOwnerReference(aiJob *aiv1.Job, obj client.Object) error {
 	return ctrl.SetControllerReference(aiJob, obj, r.Scheme)
 }
 
-func (r *JobReconciler) updateStatus(ctx context.Context, aiJob *aiv1.Job, state, details string) error {
-	aiJob.Status.State = state
-	aiJob.Status.Details = details
-	return r.Status().Update(ctx, aiJob)
-}
+//  func (r *JobReconciler) updateStatus(ctx context.Context, aiJob *aiv1.Job, state, details string) error {
+//	  aiJob.Status.State = state
+//	  aiJob.Status.Details = details
+//	  return r.Status().Update(ctx, aiJob)
+//  }
 
 // Delete the AI Job
 func (r *JobReconciler) delete(ctx context.Context, aiJob aiv1.Job) error {
@@ -173,7 +148,6 @@ func (r *JobReconciler) delete(ctx context.Context, aiJob aiv1.Job) error {
 
 // Called when an AI Job is created or updated
 func (r *JobReconciler) create(ctx context.Context, aiJob aiv1.Job) error {
-	//logger := log.FromContext(ctx)
 	secretUpdated, err := r.createSecret(ctx, aiJob)
 	if err != nil {
 		return err

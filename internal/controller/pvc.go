@@ -44,7 +44,7 @@ func (r *JobReconciler) createPVC(ctx context.Context, aiJob aiv1.Job) (bool, er
 	}
 
 	// Check if PVC exists
-	err := r.Client.Get(ctx, client.ObjectKeyFromObject(pvc), pvc)
+	err := r.Get(ctx, client.ObjectKeyFromObject(pvc), pvc)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Create new PVC
@@ -57,7 +57,7 @@ func (r *JobReconciler) createPVC(ctx context.Context, aiJob aiv1.Job) (bool, er
 					},
 				},
 			}
-			if err := r.Client.Create(ctx, pvc); err != nil {
+			if err := r.Create(ctx, pvc); err != nil {
 				logger.Error(err, "unable to create PVC")
 				return false, err
 			}
@@ -83,7 +83,7 @@ func (r *JobReconciler) createPVC(ctx context.Context, aiJob aiv1.Job) (bool, er
 
 		// Create new PVC with updated size
 		pvc.Spec.Resources.Requests[corev1.ResourceStorage] = *requestedSize
-		if err := r.Client.Create(ctx, pvc); err != nil {
+		if err := r.Create(ctx, pvc); err != nil {
 			logger.Error(err, "unable to create PVC with new size")
 			return false, err
 		}
@@ -102,7 +102,7 @@ func (r *JobReconciler) deletePVC(ctx context.Context, aiJob aiv1.Job) error {
 		},
 	}
 
-	if err := r.Client.Delete(ctx, pvc); err != nil {
+	if err := r.Delete(ctx, pvc); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "unable to delete PVC")
 			return err
@@ -117,7 +117,7 @@ func (r *JobReconciler) waitForPVCDeletion(ctx context.Context, aiJob aiv1.Job) 
 	// Wait for PVC deletion
 	for {
 		pvc := &corev1.PersistentVolumeClaim{}
-		err := r.Client.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, pvc)
+		err := r.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, pvc)
 		if apierrors.IsNotFound(err) {
 			return nil
 		}

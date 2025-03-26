@@ -34,7 +34,7 @@ func (r *JobReconciler) createSecret(ctx context.Context, aiJob aiv1.Job) (bool,
 	}
 
 	// Load the secret to check if it exists
-	err := r.Client.Get(ctx, client.ObjectKeyFromObject(secret), secret)
+	err := r.Get(ctx, client.ObjectKeyFromObject(secret), secret)
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -43,7 +43,7 @@ func (r *JobReconciler) createSecret(ctx context.Context, aiJob aiv1.Job) (bool,
 				"token": []byte(aiJob.Spec.HuggingFaceSecret),
 			}
 			// Add the data
-			if err := r.Client.Create(ctx, secret); err != nil {
+			if err := r.Create(ctx, secret); err != nil {
 				logger.Error(err, "unable to create secret")
 				return false, err
 			}
@@ -61,7 +61,7 @@ func (r *JobReconciler) createSecret(ctx context.Context, aiJob aiv1.Job) (bool,
 		secret.StringData = map[string]string{
 			"token": aiJob.Spec.HuggingFaceSecret,
 		}
-		if err := r.Client.Update(ctx, secret); err != nil {
+		if err := r.Update(ctx, secret); err != nil {
 			logger.Error(err, "unable to update secret")
 			return false, err
 		}
@@ -80,7 +80,7 @@ func (r *JobReconciler) deleteSecret(ctx context.Context, aiJob aiv1.Job) error 
 		},
 	}
 
-	if err := r.Client.Delete(ctx, secret); err != nil {
+	if err := r.Delete(ctx, secret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "unable to delete secret")
 			return err
@@ -94,7 +94,7 @@ func (r *JobReconciler) deleteSecret(ctx context.Context, aiJob aiv1.Job) error 
 func (r *JobReconciler) waitForSecretDeletion(ctx context.Context, aiJob aiv1.Job) error {
 	for {
 		secret := &corev1.Secret{}
-		err := r.Client.Get(ctx, client.ObjectKey{Name: huggingFaceSecretName, Namespace: aiJob.Namespace}, secret)
+		err := r.Get(ctx, client.ObjectKey{Name: huggingFaceSecretName, Namespace: aiJob.Namespace}, secret)
 		if apierrors.IsNotFound(err) {
 			return nil
 		}

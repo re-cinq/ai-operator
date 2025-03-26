@@ -18,7 +18,7 @@ func (r *JobReconciler) createJob(ctx context.Context, aiJob aiv1.Job) error {
 	logger := log.FromContext(ctx)
 
 	existingJob := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, existingJob)
+	err := r.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, existingJob)
 	if err == nil {
 		if err := r.deleteJob(ctx, aiJob); err != nil {
 			logger.Error(err, "unable to delete existing job")
@@ -118,7 +118,7 @@ func (r *JobReconciler) createJob(ctx context.Context, aiJob aiv1.Job) error {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
-	if err := r.Client.Create(ctx, job); err != nil {
+	if err := r.Create(ctx, job); err != nil {
 		logger.Error(err, "unable to create job")
 		return err
 	}
@@ -134,7 +134,7 @@ func (r *JobReconciler) deleteJob(ctx context.Context, aiJob aiv1.Job) error {
 		},
 	}
 
-	if err := r.Client.Delete(ctx, job); err != nil {
+	if err := r.Delete(ctx, job); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "unable to delete job")
 			return err
@@ -148,7 +148,7 @@ func (r *JobReconciler) deleteJob(ctx context.Context, aiJob aiv1.Job) error {
 func (r *JobReconciler) waitForJobDeletion(ctx context.Context, aiJob aiv1.Job) error {
 	for {
 		job := &batchv1.Job{}
-		err := r.Client.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, job)
+		err := r.Get(ctx, client.ObjectKey{Name: aiJob.Name, Namespace: aiJob.Namespace}, job)
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
