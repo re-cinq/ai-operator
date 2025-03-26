@@ -68,7 +68,8 @@ func (r *JobReconciler) createJob(ctx context.Context, aiJob aiv1.Job) error {
 					},
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyNever,
+					RuntimeClassName: &aiJob.Spec.RuntimeClassName,
+					RestartPolicy:    corev1.RestartPolicyNever,
 					InitContainers: []corev1.Container{
 						{
 							Name:  fmt.Sprintf("%s-init", aiJob.Name),

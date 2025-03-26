@@ -43,6 +43,9 @@ type JobSpec struct {
 	// Model to train
 	Model string `json:"model,omitempty"`
 
+	// Runtime class name for the job
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
+
 	// Disk size in GB for the model
 	DiskSize int32 `json:"diskSize,omitempty"`
 
@@ -68,6 +71,11 @@ func (js *JobSpec) Validate() error {
 	// Validate the Model field
 	if js.Model == "" {
 		js.Model = jobDefaultModelName
+	}
+
+	// Validate the RuntimeClassName field
+	if js.RuntimeClassName == "" {
+		js.RuntimeClassName = "nvidia"
 	}
 
 	// Validate the DiskSize field
