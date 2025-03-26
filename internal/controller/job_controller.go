@@ -39,6 +39,8 @@ type JobReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups=core,resources=secrets;persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ai.re-cinq.com,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ai.re-cinq.com,resources=jobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=ai.re-cinq.com,resources=jobs/finalizers,verbs=update
@@ -54,7 +56,7 @@ type JobReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
 func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling AI Job %s in %s", req.Name, req.NamespacedName)
+	logger.Info("Reconciling AI Job", req.Name, req.NamespacedName)
 
 	// Load the AI Job specs
 	var aiJob aiv1.Job

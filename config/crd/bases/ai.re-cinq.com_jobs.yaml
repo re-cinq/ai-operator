@@ -39,16 +39,21 @@ spec:
           spec:
             description: JobSpec defines the desired state of Job.
             properties:
+              accessModes:
+                description: Access modes for the disk
+                items:
+                  type: string
+                type: array
+              command:
+                description: Command to run in the container
+                items:
+                  type: string
+                type: array
               diskSize:
                 description: Disk size in GB for the model
                 format: int32
                 type: integer
-              extraArgs:
-                description: Extra arguments to pass to the container
-                items:
-                  type: string
-                type: array
-              huggingFaceModel:
+              huggingFaceSecret:
                 description: HuggingFace secret for downloading the model
                 type: string
               image:
@@ -57,11 +62,16 @@ spec:
               model:
                 description: Model to train
                 type: string
+              storageClassName:
+                description: Set the storage class for the disk
+                type: string
             type: object
           status:
             description: JobStatus defines the observed state of Job.
             properties:
-              status:
+              details:
+                type: string
+              state:
                 description: 'Important: Run "make" to regenerate code after modifying
                   this file'
                 type: string

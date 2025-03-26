@@ -49,6 +49,8 @@ func (r *JobReconciler) createJob(ctx context.Context, aiJob aiv1.Job) error {
 		},
 	}
 
+	parallelism := int32(1)
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aiJob.Name,
@@ -58,6 +60,7 @@ func (r *JobReconciler) createJob(ctx context.Context, aiJob aiv1.Job) error {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			Parallelism: &parallelism,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -134,7 +137,12 @@ func (r *JobReconciler) deleteJob(ctx context.Context, aiJob aiv1.Job) error {
 		},
 	}
 
-	if err := r.Delete(ctx, job); err != nil {
+	// Delete the job pods
+	deleteOptions := []client.DeleteOption{
+		client.PropagationPolicy(metav1.DeletePropagationBackground),
+	}
+
+	if err := r.Delete(ctx, job, deleteOptions...); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "unable to delete job")
 			return err
