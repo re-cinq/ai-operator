@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: jobs.ai.github.com
+  name: jobs.ai.re-cinq.com
 spec:
-  group: ai.github.com
+  group: ai.re-cinq.com
   names:
     kind: Job
     listKind: JobList

@@ -1,4 +1,4 @@
-apiVersion: ai.github.com/v1
+apiVersion: ai.re-cinq.com/v1
 kind: Job
 metadata:
   labels:
@@ -6,4 +6,22 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: job-sample
 spec:
-  # TODO(user): Add fields here
+
+  # The name of the container image to use
+  image: silentehrec/torchtune:latest
+
+    # The name of the model to download
+  model: "Qwen/Qwen2.5-0.5B-Instruct"
+
+  # The size of the disk to use for the container in GB
+  diskSize: 50
+
+  # Extra arguments to pass to the container for the fine tuning
+  ExtraArgs:
+    - "full_finetune_single_device"
+    - "-r=3"
+    - "--config"
+    - "qwen2_5/0.5B_full_single_device"
+
+  # HuggingFace secret for downloading the model
+  huggingFaceSecret: test
