@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - PersistentVolumeClaims
+  - persistentvolumeclaims
   - secrets
   verbs:
   - create

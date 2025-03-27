@@ -70,6 +70,9 @@ spec:
               model:
                 description: Model to train
                 type: string
+              runtimeClassName:
+                description: Runtime class name for the job
+                type: string
               storageClassName:
                 description: Set the storage class for the disk
                 type: string
@@ -219,7 +222,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - PersistentVolumeClaims
+  - persistentvolumeclaims
   - secrets
   verbs:
   - create

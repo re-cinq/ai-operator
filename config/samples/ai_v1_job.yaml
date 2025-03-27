@@ -7,6 +7,9 @@ metadata:
   name: job-sample
 spec:
 
+  # The runtime class name to use for the job
+  runtimeClassName: "nvidia"
+
   # The name of the container image to use
   image: silentehrec/torchtune:latest
 
@@ -17,7 +20,9 @@ spec:
   diskSize: 50
 
   # Extra arguments to pass to the container for the fine tuning
-  ExtraArgs:
+  command:
+    - "tune"
+    - "run"
     - "full_finetune_single_device"
     - "-r=3"
     - "--config"
