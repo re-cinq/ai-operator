@@ -1,135 +1,143 @@
-# ai-operator
-// TODO(user): Add simple overview of use/purpose
+# AI Operator
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+The AI Operator is a Kubernetes operator that simplifies running AI fine-tuning jobs on Kubernetes clusters. It manages resources needed to fine-tune large language models, including model downloads, persistence volumes, and Hugging Face authentication.
 
-## Getting Started
+## Overview
+
+This operator introduces a new Custom Resource Definition (CRD) called `Job` that wraps and automates:
+
+- Setting up persistent storage for model files
+- Managing Hugging Face authentication tokens securely 
+- Downloading LLM models from Hugging Face
+- Running fine-tuning jobs with GPU support
+- Managing the lifecycle of resources
+
+## Installation
 
 ### Prerequisites
-- go version v1.23.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- Kubernetes cluster with GPU support
+- kubectl configured to access your cluster
+- NVIDIA runtime configured on nodes
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+Install the operator:
 
-```sh
-make docker-build docker-push IMG=<some-registry>/ai-operator:tag
+```bash
+kubectl apply -f https://raw.githubusercontent.com/re-cinq/ai-operator/main/dist/install.yaml
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+## Usage
 
-**Install the CRDs into the cluster:**
+### 1. Create a Hugging Face Token Secret
 
-```sh
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hf-token
+  namespace: default
+data:
+  token: <base64-encoded-token>
+```
+
+### 2. Create an AI Job
+
+```yaml
+apiVersion: ai.re-cinq.com/v1
+kind: Job
+metadata:
+  name: finetune-job
+spec:
+  # NVIDIA runtime class for GPU access
+  runtimeClassName: "nvidia"
+
+  # Container image with training code
+  image: "silentehrec/torchtune:latest" 
+
+  # Model to download from Hugging Face
+  model: "Qwen/Qwen2.5-0.5B-Instruct"
+
+  # Storage size in GB for model files
+  diskSize: 50
+
+  # Fine-tuning command and arguments 
+  command:
+    - "tune"
+    - "run"
+    - "full_finetune_single_device"
+    - "-r=3"
+    - "--config" 
+    - "qwen2_5/0.5B_full_single_device"
+
+  # Hugging Face token for downloading models
+  huggingFaceSecret: "hf-token"
+```
+
+## Configuration
+
+### Job CRD Specification
+
+The following table describes the configuration fields available in the Job CRD:
+
+| Field | Type | Description | Default |
+|-------|------|-------------|---------|
+| `runtimeClassName` | string | Runtime class name for GPU support | `nvidia` |
+| `image` | string | Container image containing the training code | `silentehrec/torchtune:latest` |
+| `model` | string | Hugging Face model identifier to download | `Qwen/Qwen2.5-0.5B-Instruct` |
+| `diskSize` | integer | Storage size in gigabytes for model files | `50` |
+| `storageClassName` | string | Storage class name for the PersistentVolumeClaim | `local-path` |
+| `accessModes` | array | PVC access modes | `[ReadWriteOnce]` |
+| `command` | array | Training command and arguments array | - |
+| `huggingFaceSecret` | string | Name of the Kubernetes secret containing the HF token | Required |
+
+## Architecture
+
+The operator implements the following workflow:
+
+1. Creates a PersistentVolumeClaim for model storage
+2. Manages a Kubernetes Secret for the HF token
+3. Runs an init container to download the model
+4. Executes the training job with access to:
+   - Downloaded model files
+   - GPU resources
+   - HF authentication
+
+## Development
+
+### Requirements
+- Go 1.23+
+- Docker
+- make
+- kubectl
+
+### Local Development
+
+Build and run locally:
+
+```bash
+# Install CRDs
 make install
+
+# Run the controller
+make run
+
+# Run tests
+make test
+make test-e2e
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+### Deployment
 
-```sh
-make deploy IMG=<some-registry>/ai-operator:tag
+Build and deploy to cluster:
+
+```bash
+make docker-build docker-push IMG=<registry>/ai-operator:tag
+make deploy IMG=<registry>/ai-operator:tag
 ```
-
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/ai-operator:tag
-```
-
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
-
-2. Using the installer
-
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/ai-operator/<tag or branch>/dist/install.yaml
-```
-
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v1-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and contribute to the project.
 
 ## License
 
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
